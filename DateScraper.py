@@ -2,42 +2,74 @@ from lxml import html
 from bs4 import BeautifulSoup
 import re
 import requests
+import sys
+import getopt
 
-team = ''
-games = []
-page = requests.get('')
-data = page.text
-soup = BeautifulSoup(data, "lxml")
-pattern = "([A-Z])\w+ [0-9]{1,2}[/][0-9]{1,2}"
-matcher = re.compile(pattern)
+def main(argv):
+    team = ''
+    website = ''
 
-try:
-    tables = soup.findAll('table') 
+    print "reading input..."
 
-    for table in tables:
-        rows = table.findChildren('tr') 
+    try:
+        #supports one word teams only
+        #just needs a unique team string
+        opts, args = getopt.getopt(argv, "t:w:") 
 
-        for row in rows:
-            cell = row.find('td')
-            info = None
+    except getopt.GetoptError:
+        print "error with input"
+        sys.exit(2)
 
-            if cell is not None:
-                info = cell.find('span', text=re.compile(pattern))                
+    for opt, arg in opts:
+        if opt == '-t':
+            team = arg
+        elif opt == '-w':
+            website = arg
+    
 
-            if info is not None:
-                isTeam = None
-                game = []
-                game.append(info.text)
+    print 'parsed team: ' + team + " website: " + website
+    scrape_site(team, website)
 
-                for col in cell.find_next_siblings('td'):
-                    game.append(col.find('span').text)
+def scrape_site(team, website):
+    games = []
+    pattern = "([A-Z])\w+ [0-9]{1,2}[/][0-9]{1,2}"
 
-                    if isTeam is None and team in col.find('span').text:
-                        isTeam = True
+    try:
+        page = requests.get(website)
+        data = page.text
+        soup = BeautifulSoup(data, 'lxml')
+        tables = soup.find_all('table') 
 
-                if isTeam is not None:
-                    games.append(game)
+        print 'Website successfully processed'
+
+        for table in tables:
+            rows = table.findChildren('tr') 
+
+            for row in rows:
+                cell = row.find('td')
+                info = None
+
+                if cell is not None:
+                    info = cell.find('span', text=re.compile(pattern))                
+
+                if info is not None:
+                    isTeam = None
+                    game = []
+                    game.append(info.text)
+
+                    for col in cell.find_next_siblings('td'):
+                        game.append(col.find('span').text)
+
+                        if isTeam is None and team in col.find('span').text:
+                            print 'Found matching row'
+                            isTeam = True
+
+                    if isTeam is not None:
+                        games.append(game)
                 
-    print games 
-except:
-    print("Couldn't parse")
+        print games 
+    except:
+        print("Couldn't parse")
+
+if __name__ == "__main__":
+    main(sys.argv[1:])
