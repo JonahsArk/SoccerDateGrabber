@@ -10,9 +10,10 @@ This is a small python script to help scrape information from local recreational
 * -w website (website address to scrape)
 
 ## Example:
-'''
+
+```
 python DateScraper.py -t Liverpool -w http://www.website.com
-'''
+```
 
 ## Notes
 
