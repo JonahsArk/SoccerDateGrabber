@@ -43,34 +43,31 @@ def scrape_site(team, website):
         page = requests.get(website)
         data = page.text
         soup = BeautifulSoup(data, 'lxml')
-        tables = soup.find_all('table') 
+        rows = soup.find_all('tr') 
 
         print 'Website successfully processed'
 
-        for table in tables:
-            rows = table.findChildren('tr') 
+        for row in rows:
+            cell = row.find('td')
+            info = None
 
-            for row in rows:
-                cell = row.find('td')
-                info = None
+            if cell is not None:
+                info = cell.find('span', text=matcher)                
 
-                if cell is not None:
-                    info = cell.find('span', text=matcher)                
+            if info is not None:
+                isTeam = None
+                game = []
+                game.append(info.text)
 
-                if info is not None:
-                    isTeam = None
-                    game = []
-                    game.append(info.text)
+                for col in cell.find_next_siblings('td'):
+                    game.append(col.find('span').text)                        
 
-                    for col in cell.find_next_siblings('td'):
-                        game.append(col.find('span').text)                        
+                    if isTeam is None and team in col.find('span').text:
+                    	print 'Found matching row'
+                        isTeam = True
 
-                        if isTeam is None and team in col.find('span').text:
-                            print 'Found matching row'
-                            isTeam = True
-
-                    if isTeam is not None:
-                        games.append(game)
+                if isTeam is not None:
+                    games.append(game)
         
         print'Writing...'
         write_output_file(games)
