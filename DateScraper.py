@@ -1,6 +1,8 @@
 from lxml import html
 from bs4 import BeautifulSoup
+from datetime import datetime
 from dateutil import parser
+from dateutil.relativedelta import relativedelta
 import re
 import requests
 import sys
@@ -81,6 +83,7 @@ def get_valid_string(date):
     return newdate 
 
 def write_output_file(games):
+    formatpattern = "%I:%M %p"
     datepattern = "([A-Z])\w+ [0-9]{1,2}[/][0-9]{1,2}"
     timepattern = "\d{1}:\d{2} (?:AM|PM)"
     datematcher = re.compile(datepattern)
@@ -89,8 +92,13 @@ def write_output_file(games):
     with open('output.csv', 'wb') as myfile:
         writer = csv.writer(myfile, delimiter=',',
                             quotechar='|', quoting=csv.QUOTE_MINIMAL)
-        writer.writerow(['Subject', 'Start Date', 'Start Time',
-                                'Description', 'Location'])
+        writer.writerow(['Subject', 
+                            'Start Date', 
+                            'Start Time',
+                            'End Date',
+                       	    'End Time', 
+                            'Description', 
+                            'Location'])
 
         for item in games:
             date = [x for x in item if datematcher.match(x)]
@@ -98,9 +106,16 @@ def write_output_file(games):
             combined = ''.join('%s %s' % x for x in zip(date, time))
             gametime = get_valid_string(combined)
             teams = item[2] + ' vs. ' + item[3] 
-            writer.writerow(['Soccer', gametime.date(), item[1],
-                                teams, item[4]]) 
+            
+            oneHourAdded = gametime + relativedelta(hours=+1)	
 
+            writer.writerow(['Soccer', 
+                                gametime.date(),
+                                gametime.strftime(formatpattern),
+                                gametime.date(),
+                                oneHourAdded.strftime(formatpattern),
+                                teams, 
+                                item[4]]) 
 
 if __name__ == "__main__":
     main(sys.argv[1:])
