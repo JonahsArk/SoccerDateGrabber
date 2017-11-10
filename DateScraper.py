@@ -36,7 +36,9 @@ def main(argv):
 
 def scrape_site(team, website):
     games = []
-    pattern = "([A-Z])\w+ [0-9]{1,2}[/][0-9]{1,2}"
+
+    #Patterns: 'Wed 10/14' or 'Wed Oct 14'
+    pattern = "(\w+ [0-9]{1,2}[/][0-9]{1,2}|((\w){3} ){2}[0-9]{1,2})"
     timepattern = "\d{1}:\d{2} (?:AM|PM)"
     matcher = re.compile(pattern)
     timematcher = re.compile(timepattern)
@@ -52,11 +54,18 @@ def scrape_site(team, website):
         for row in rows:
             cell = row.find('td')
             info = None
+            league = 0
 
             if cell is not None:
                 info = cell.find('span', text=matcher)                
 
-            if info is not None:
+                if info is None: 
+                    info = cell.find_next('td', text=matcher)
+                    league = 2
+                else:
+                    league = 1
+
+            if info is not None and league is 1:
                 isTeam = None
                 game = []
                 game.append(info.text)
@@ -70,9 +79,24 @@ def scrape_site(team, website):
 
                 if isTeam is not None:
                     games.append(game)
-        
+            
+            elif info is not None and league is 2:
+                isTeam = None
+                game = []
+                game.append(info.text)
+
+                for col in info.find_next_siblings('td'):
+                    game.append(col.text)
+    
+                    if isTeam is None and team in col.text:
+                        print 'Found matching row'
+                        isTeam = True
+
+                if isTeam is not None:
+                    games.append(game)
+            
         print'Writing...'
-        write_output_file(games)
+        #write_output_file(games)
         print 'Wrote to output.csv successfully' 
 
     except:
