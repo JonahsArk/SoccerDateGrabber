@@ -48,18 +48,19 @@ def scrape_site(team, website):
         data = page.text
         soup = BeautifulSoup(data, 'lxml')
         rows = soup.find_all('tr') 
+        league = 0
 
         print 'Website successfully processed'
 
         for row in rows:
             cell = row.find('td')
             info = None
-            league = 0
 
             if cell is not None:
                 info = cell.find('span', text=matcher)                
 
-                if info is None: 
+                #since looping if league is 1, set as so
+                if info is None and league is not 1: 
                     info = cell.find_next('td', text=matcher)
                     league = 2
                 else:
@@ -83,20 +84,21 @@ def scrape_site(team, website):
             elif info is not None and league is 2:
                 isTeam = None
                 game = []
-                game.append(info.text)
 
-                for col in info.find_next_siblings('td'):
-                    game.append(col.text)
+                for col in cell.find_next_siblings('td'):
+                    #hack:col.text had whole site in some cases.
+                    if len(col.text) < 100:
+                        game.append(col.text)
     
-                    if isTeam is None and team in col.text:
-                        print 'Found matching row'
-                        isTeam = True
+                        if isTeam is None and team in col.text:
+                            print 'Found matching row'
+                            isTeam = True
 
                 if isTeam is not None:
                     games.append(game)
             
         print'Writing...'
-        #write_output_file(games)
+        write_output_file(games, league)
         print 'Wrote to output.csv successfully' 
 
     except:
@@ -106,9 +108,9 @@ def get_valid_string(date):
     newdate = parser.parse(date)
     return newdate 
 
-def write_output_file(games):
+def write_output_file(games, league):
     formatpattern = "%I:%M %p"
-    datepattern = "([A-Z])\w+ [0-9]{1,2}[/][0-9]{1,2}"
+    datepattern = "(\w+ [0-9]{1,2}[/][0-9]{1,2}|((\w){3} ){2}[0-9]{1,2})"
     timepattern = "\d{1}:\d{2} (?:AM|PM)"
     datematcher = re.compile(datepattern)
     timematcher = re.compile(timepattern)
@@ -129,9 +131,18 @@ def write_output_file(games):
             time = [x for x in item if timematcher.match(x)]
             combined = ''.join('%s %s' % x for x in zip(date, time))
             gametime = get_valid_string(combined)
-            teams = item[2] + ' vs. ' + item[3] 
-            
+            teams = None
+            location = None 
+
+            if league is 1:
+                teams = item[2] + ' vs. ' + item[3] 
+                location = item[4]
+            elif league is 2:
+                teams = item[2] + ' vs. ' + item[4]
+                location= item[5]
+           
             oneHourAdded = gametime + relativedelta(hours=+1)	
+
 
             writer.writerow(['Soccer', 
                                 gametime.date(),
@@ -139,7 +150,7 @@ def write_output_file(games):
                                 gametime.date(),
                                 oneHourAdded.strftime(formatpattern),
                                 teams, 
-                                item[4]]) 
+                                location]) 
 
 if __name__ == "__main__":
     main(sys.argv[1:])
