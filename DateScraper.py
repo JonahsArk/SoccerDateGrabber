@@ -110,7 +110,6 @@ def get_valid_string(date):
 
 def write_output_file(games, league):
     formatpattern = "%I:%M %p"
-    temppattern = "((\w){3} ){2}[0-9]{1,2}"
     datepattern = "(\w+ [0-9]{1,2}[/][0-9]{1,2}|((\w){3} ){2}[0-9]{1,2})"
     timepattern = "\d{1,2}:\d{2} (?:AM|PM|am|pm)"
     datematcher = re.compile(datepattern)
