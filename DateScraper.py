@@ -110,8 +110,9 @@ def get_valid_string(date):
 
 def write_output_file(games, league):
     formatpattern = "%I:%M %p"
+    temppattern = "((\w){3} ){2}[0-9]{1,2}"
     datepattern = "(\w+ [0-9]{1,2}[/][0-9]{1,2}|((\w){3} ){2}[0-9]{1,2})"
-    timepattern = "\d{1}:\d{2} (?:AM|PM)"
+    timepattern = "\d{1,2}:\d{2} (?:AM|PM|am|pm)"
     datematcher = re.compile(datepattern)
     timematcher = re.compile(timepattern)
 
@@ -133,22 +134,23 @@ def write_output_file(games, league):
             gametime = get_valid_string(combined)
             teams = None
             location = None 
+            gamelength = None
 
             if league is 1:
                 teams = item[2] + ' vs. ' + item[3] 
                 location = item[4]
+                gamelength = gametime + relativedelta(hours=+1)
             elif league is 2:
                 teams = item[2] + ' vs. ' + item[4]
                 location= item[5]
-           
-            oneHourAdded = gametime + relativedelta(hours=+1)	
-
+                gamelength = gametime + relativedelta(hours=+1, minutes=+45)
+                
 
             writer.writerow(['Soccer', 
                                 gametime.date(),
                                 gametime.strftime(formatpattern),
                                 gametime.date(),
-                                oneHourAdded.strftime(formatpattern),
+                                gamelength.strftime(formatpattern),
                                 teams, 
                                 location]) 
 
