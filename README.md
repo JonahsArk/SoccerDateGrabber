@@ -17,4 +17,4 @@ python DateScraper.py -t Liverpool -w http://www.website.com
 
 ## Notes
 
-Currently only works for teams on (www.teamsideline.com)
+Currently only works for teams on (www.teamsideline.com, www.gpsdsoccer.com)
